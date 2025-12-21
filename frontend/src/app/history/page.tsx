@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +39,8 @@ async function getHistory(
   search?: string
 ): Promise<HistoryResponse> {
   try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
     const params = new URLSearchParams({
       page: page.toString(),
       page_size: pageSize.toString(),
@@ -50,7 +51,7 @@ async function getHistory(
     }
 
     const res = await fetch(
-      `http://127.0.0.1:8000/api/history?${params.toString()}`,
+      `${apiUrl}/api/history?${params.toString()}`,
       {
         // Next.js 15: GET requests are NOT cached by default
         // Use 'no-store' to ensure fresh data on every request

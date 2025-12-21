@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
@@ -7,9 +6,7 @@ import remarkGfm from "remark-gfm";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import { BackgroundBeams } from "@/components/ui/background-beams";
-import { Skeleton } from "@/components/ui/skeleton";
 
 // TypeScript interfaces
 interface AITool {
@@ -49,7 +46,8 @@ interface HistoryDetailResponse {
  */
 async function getHistoryDetail(id: string): Promise<HistoryDetailResponse> {
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/history/${id}`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+    const res = await fetch(`${apiUrl}/api/history/${id}`, {
       cache: "no-store",
     });
 

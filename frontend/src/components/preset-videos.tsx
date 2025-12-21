@@ -29,7 +29,8 @@ export function PresetVideos({ onSelect }: PresetVideosProps) {
   useEffect(() => {
     const fetchPresets = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/presets");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+        const response = await fetch(`${apiUrl}/api/presets`);
         const data = await response.json();
         if (data.success) {
           setPresets(data.data);
