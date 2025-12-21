@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Play, Clock, TrendingUp } from "lucide-react";
+import { Play, Clock } from "lucide-react";
 import { MagicCard } from "@/components/ui/magic-card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -89,7 +89,7 @@ export function PresetVideos({ onSelect }: PresetVideosProps) {
           {presets.map((preset) => (
             <div key={preset.id} className="flex-none w-[340px]">
               <MagicCard
-                className="cursor-pointer rounded-xl border border-border/50 transition-all duration-300 hover:scale-[1.02] h-full overflow-hidden"
+                className="cursor-pointer rounded-xl border border-border/50 transition-all duration-300 h-full overflow-hidden"
                 gradientSize={250}
                 gradientColor="#1a1a1a"
                 gradientOpacity={0.3}
@@ -98,14 +98,14 @@ export function PresetVideos({ onSelect }: PresetVideosProps) {
               >
                 <div
                   onClick={() => onSelect(preset.video_url)}
-                  className="flex flex-col h-full"
+                  className="flex flex-col h-full p-3"
                 >
                   {/* Thumbnail */}
-                  <div className="relative h-48 w-full overflow-hidden bg-muted flex-shrink-0 rounded-t-xl">
+                  <div className="relative h-48 w-full overflow-hidden bg-muted flex-shrink-0 rounded-lg">
                     <img
                       src={preset.thumbnail_url}
                       alt={preset.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="h-full w-full object-cover rounded-lg"
                       loading="lazy"
                     />
                     {/* Play overlay */}
@@ -124,7 +124,7 @@ export function PresetVideos({ onSelect }: PresetVideosProps) {
                   </div>
 
                   {/* Content - Title at top, rest at bottom */}
-                  <div className="p-4 flex-1 flex flex-col">
+                  <div className="pt-3 flex-1 flex flex-col">
                     {/* Title */}
                     <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground mb-auto">
                       {preset.title}
