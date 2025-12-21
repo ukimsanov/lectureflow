@@ -4,6 +4,7 @@ import { Clock, RefreshCw } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NumberTicker } from "@/components/ui/number-ticker";
 import { formatDuration } from "@/lib/utils";
 import type { VideoMetadata, CacheInfo } from "@/types";
 
@@ -56,7 +57,7 @@ export function VideoMetadataCard({
                 <>
                   <Badge variant="secondary" className="gap-1.5">
                     <Clock className="h-3 w-3" />
-                    From cache ({cacheInfo.cache_age_hours}h ago)
+                    From cache (<NumberTicker value={cacheInfo.cache_age_hours ?? 0} className="text-inherit" />h ago)
                   </Badge>
                   <Button
                     variant="outline"
