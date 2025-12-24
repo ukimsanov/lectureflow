@@ -40,7 +40,7 @@ from app.models import (
     AITool,
     VideoMetadata
 )
-from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, AIToolExtractor
+from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor
 from app.agents import MultiAgentOrchestrator
 from app.database import get_db, dispose_engine
 from app.database.connection import get_database_url
@@ -644,27 +644,52 @@ async def process_video_stream(
             }
 
             # ================================================================
-            # Step 3: Extract AI Tools
+            # Step 3: Extract Key Concepts (generalized for all content)
             # ================================================================
-            print("🔧 Step 3: Extracting AI tools...")
+            print("🔧 Step 3: Extracting key concepts...")
             yield {
                 "event": "message",
-                "data": json.dumps({"type": "status", "data": "Extracting AI tools..."})
+                "data": json.dumps({"type": "status", "data": "Extracting key concepts..."})
             }
 
-            tool_extractor = AIToolExtractor()
-            ai_tools = tool_extractor.extract(
+            concept_extractor = ConceptExtractor()
+            concepts, content_type = concept_extractor.extract(
                 transcript=transcript_data.full_text,
                 video_title=transcript_data.metadata.video_title
             )
-            print(f"✅ AI tools extracted: {len(ai_tools)} tools found")
+            print(f"✅ Concepts extracted: {len(concepts)} concepts found (type: {content_type.primary_type})")
 
-            # Send complete tools list
+            # Create backward-compatible ai_tools format
+            ai_tools_compat = []
+            for concept in concepts:
+                ai_tools_compat.append({
+                    "tool_name": concept.name,
+                    "category": concept.category,
+                    "context_snippet": concept.context_snippet,
+                    "timestamp": concept.timestamp,
+                    "confidence_score": concept.confidence_score,
+                    "usage_context": concept.definition or f"{concept.name} - {concept.importance} importance"
+                })
+
+            # Send concepts (new format) with content type
+            yield {
+                "event": "message",
+                "data": json.dumps({
+                    "type": "concepts",
+                    "data": {
+                        "concepts": [c.model_dump() for c in concepts],
+                        "content_type": content_type.model_dump(),
+                        "ai_tools": ai_tools_compat  # Backward compatibility
+                    }
+                })
+            }
+
+            # Also send tools event for backward compatibility with old frontend
             yield {
                 "event": "message",
                 "data": json.dumps({
                     "type": "tools",
-                    "data": [tool.model_dump() for tool in ai_tools]
+                    "data": ai_tools_compat
                 })
             }
 

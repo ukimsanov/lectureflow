@@ -7,6 +7,7 @@ export interface VideoMetadata {
   transcript?: string;
 }
 
+// Legacy interface for backward compatibility
 export interface AITool {
   tool_name: string;
   category?: string;
@@ -14,6 +15,24 @@ export interface AITool {
   context_snippet?: string;
   usage_context?: string;
   timestamp?: number;
+}
+
+// New generalized Concept interface
+export interface Concept {
+  name: string;
+  category: string;  // term, definition, person, theory, formula, event, tool, framework, book, place, date
+  definition?: string;
+  context_snippet: string;
+  timestamp?: number;
+  confidence_score: number;
+  importance: "high" | "medium" | "low";
+}
+
+// Content type detection result
+export interface ContentType {
+  primary_type: "science" | "history" | "business" | "tech" | "math" | "general";
+  confidence: number;
+  keywords_matched: string[];
 }
 
 export type StepStatus = "pending" | "in_progress" | "completed";

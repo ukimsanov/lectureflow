@@ -74,7 +74,7 @@ class ProcessResponse(BaseModel):
 # ============================================================================
 
 class AITool(BaseModel):
-    """Individual AI tool extracted from transcript"""
+    """Individual AI tool extracted from transcript (legacy alias for Concept)"""
     tool_name: str = Field(..., description="Name of the AI tool/framework/library")
     category: str = Field(..., description="Category: framework, library, model, platform, service")
     context_snippet: str = Field(..., description="Brief context where tool was mentioned")
@@ -83,11 +83,37 @@ class AITool(BaseModel):
     usage_context: str = Field(..., description="How the tool is being used/discussed")
 
 
+class Concept(BaseModel):
+    """
+    Key concept extracted from any educational content.
+    Generalized version of AITool that works for all subjects.
+    """
+    name: str = Field(..., description="Name of the concept, term, person, or entity")
+    category: str = Field(
+        ...,
+        description="Category: term, definition, person, theory, formula, event, tool, framework, book, place, date"
+    )
+    definition: Optional[str] = Field(None, description="Brief definition or explanation (1-2 sentences)")
+    context_snippet: str = Field(..., description="Brief context where it was mentioned (max 100 chars)")
+    timestamp: Optional[float] = Field(None, description="Approximate timestamp in video (seconds)")
+    confidence_score: float = Field(..., description="Confidence score 0.0-1.0", ge=0.0, le=1.0)
+    importance: str = Field("medium", description="Importance level: high, medium, low")
+
+
+class ContentType(BaseModel):
+    """Detected content type of the lecture"""
+    primary_type: str = Field(..., description="Primary content type: science, history, business, tech, math, general")
+    confidence: float = Field(..., description="Confidence in type detection 0.0-1.0")
+    keywords_matched: List[str] = Field(default_factory=list, description="Keywords that matched this type")
+
+
 class MultiAgentResult(BaseModel):
     """Complete result from multi-agent processing"""
     video_metadata: VideoMetadata
     lecture_notes: str = Field(..., description="Markdown-formatted lecture notes from Gemini")
-    ai_tools: List[AITool] = Field(default_factory=list, description="AI tools extracted by GPT-4o-mini")
+    ai_tools: List[AITool] = Field(default_factory=list, description="Legacy: AI tools (backward compat)")
+    concepts: List[Concept] = Field(default_factory=list, description="Key concepts extracted by GPT-4o-mini")
+    content_type: Optional[ContentType] = Field(None, description="Detected content type of the lecture")
     processing_time: float = Field(..., description="Total time taken to process (seconds)")
     agent_execution_order: List[str] = Field(
         default_factory=list,

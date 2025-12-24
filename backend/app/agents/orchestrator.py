@@ -7,22 +7,29 @@ Architecture:
       ↓
   fetch_transcript (Agent 1)
       ↓
-  ┌─────────┴──────────┐
-  │                    │
-  summarize (Agent 2)  extract_tools (Agent 3)
-  │                    │
-  └─────────┬──────────┘
+  ┌─────────────┴──────────────┐
+  │                            │
+  summarize (Agent 2)    extract_concepts (Agent 3)
+  (Gemini 2.5 Flash)     (GPT-4o-mini)
+  │                            │
+  └─────────────┬──────────────┘
       ↓
-  aggregate_results
-      ↓
-  Return MultiAgentResult
+  Return MultiAgentResult + Concepts + ContentType
+
+Agent 3 now extracts generalized concepts for ANY educational content:
+- science: Formulas, theories, scientists, experiments
+- history: Dates, events, figures, causes/effects
+- business: Frameworks, case studies, metrics
+- tech: Tools, libraries, architectures
+- math: Formulas, proofs, theorems
+- general: Key terms, definitions, quotes
 """
 from typing import TypedDict, List, Annotated
 import operator
 from langgraph.graph import StateGraph, START, END
 
-from app.models import AITool, VideoMetadata
-from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, AIToolExtractor
+from app.models import AITool, Concept, ContentType, VideoMetadata
+from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor
 
 
 # ============================================================================
@@ -48,8 +55,10 @@ class OverallState(TypedDict):
     # From Agent 2 (Summarizer) - Gemini
     lecture_notes: str
 
-    # From Agent 3 (Tool Extractor) - GPT-4o-mini
-    ai_tools: List[dict]
+    # From Agent 3 (Concept Extractor) - GPT-4o-mini
+    ai_tools: List[dict]  # Kept for backward compatibility
+    concepts: List[dict]  # New generalized concepts
+    content_type: dict    # Detected content type
 
     # Execution tracking - uses reducer for parallel updates
     # Annotated with operator.add tells LangGraph to concatenate lists
@@ -71,9 +80,11 @@ class SummarizerOutput(TypedDict):
     agent_execution_order: list[str]
 
 
-class ToolExtractorOutput(TypedDict):
-    """Output schema for tool extractor node"""
-    ai_tools: List[dict]
+class ConceptExtractorOutput(TypedDict):
+    """Output schema for concept extractor node"""
+    ai_tools: List[dict]  # Backward compatibility
+    concepts: List[dict]
+    content_type: dict
     agent_execution_order: list[str]
 
 
@@ -129,30 +140,47 @@ def summarize_node(state: OverallState) -> SummarizerOutput:
     }
 
 
-def extract_tools_node(state: OverallState) -> ToolExtractorOutput:
+def extract_concepts_node(state: OverallState) -> ConceptExtractorOutput:
     """
-    Agent 3: Extract AI tools using GPT-4o-mini.
+    Agent 3: Extract key concepts using GPT-4o-mini.
+    Works with ANY educational content type (science, history, business, tech, math, general).
     Runs in parallel with Agent 2.
 
-    Returns ToolExtractorOutput (subset of OverallState).
+    Returns ConceptExtractorOutput (subset of OverallState).
     """
-    print("🔧 Agent 3: Extracting AI tools with GPT-4o-mini...")
+    print("🔧 Agent 3: Extracting key concepts with GPT-4o-mini...")
 
-    extractor = AIToolExtractor()
+    extractor = ConceptExtractor()
     video_title = state["video_metadata"].get("video_title")
 
-    ai_tools = extractor.extract(
+    concepts, content_type = extractor.extract(
         transcript=state["transcript"],
         video_title=video_title
     )
 
-    print(f"✅ Agent 3: Extracted {len(ai_tools)} AI tools")
+    print(f"✅ Agent 3: Extracted {len(concepts)} concepts (type: {content_type.primary_type})")
 
-    # Return only what this node produces
     # Convert to dicts for JSON serialization
+    concepts_dict = [concept.model_dump() for concept in concepts]
+
+    # Create backward-compatible ai_tools format
+    # Map concept fields to AITool fields for backward compatibility
+    ai_tools_compat = []
+    for concept in concepts:
+        ai_tools_compat.append({
+            "tool_name": concept.name,
+            "category": concept.category,
+            "context_snippet": concept.context_snippet,
+            "timestamp": concept.timestamp,
+            "confidence_score": concept.confidence_score,
+            "usage_context": concept.definition or f"{concept.name} - {concept.importance} importance"
+        })
+
     return {
-        "ai_tools": [tool.model_dump() for tool in ai_tools],
-        "agent_execution_order": ["extract_tools"]
+        "ai_tools": ai_tools_compat,  # Backward compatibility
+        "concepts": concepts_dict,
+        "content_type": content_type.model_dump(),
+        "agent_execution_order": ["extract_concepts"]
     }
 
 
@@ -177,26 +205,26 @@ def create_multi_agent_graph():
     # Add nodes (agents)
     workflow.add_node("fetch_transcript", fetch_transcript_node)
     workflow.add_node("summarize", summarize_node)
-    workflow.add_node("extract_tools", extract_tools_node)
+    workflow.add_node("extract_concepts", extract_concepts_node)
 
     # Add edges (flow control)
     # Start with transcript fetching
     workflow.add_edge(START, "fetch_transcript")
 
-    # After fetching, BOTH summarize and extract_tools run in parallel
+    # After fetching, BOTH summarize and extract_concepts run in parallel
     # This is the key to parallel execution in LangGraph
     workflow.add_edge("fetch_transcript", "summarize")
-    workflow.add_edge("fetch_transcript", "extract_tools")
+    workflow.add_edge("fetch_transcript", "extract_concepts")
 
     # Both parallel nodes end the graph when they complete
     workflow.add_edge("summarize", END)
-    workflow.add_edge("extract_tools", END)
+    workflow.add_edge("extract_concepts", END)
 
     # Compile the graph
     app = workflow.compile()
 
     print("✅ LangGraph StateGraph compiled successfully")
-    print("📊 Graph structure: START → fetch_transcript → [summarize, extract_tools] → END")
+    print("📊 Graph structure: START → fetch_transcript → [summarize, extract_concepts] → END")
 
     return app
 
@@ -236,7 +264,9 @@ class MultiAgentOrchestrator:
             "transcript": "",
             "video_metadata": {},
             "lecture_notes": "",
-            "ai_tools": [],
+            "ai_tools": [],  # Backward compatibility
+            "concepts": [],
+            "content_type": {},
             "agent_execution_order": []
         }
 

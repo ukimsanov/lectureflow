@@ -18,6 +18,22 @@ interface AITool {
   timestamp?: number;
 }
 
+interface Concept {
+  name: string;
+  category: string;
+  definition?: string;
+  context_snippet: string;
+  timestamp?: number;
+  confidence_score: number;
+  importance: "high" | "medium" | "low";
+}
+
+interface ContentType {
+  primary_type: string;
+  confidence: number;
+  keywords_matched: string[];
+}
+
 interface VideoMetadata {
   video_id: string;
   video_title: string;
@@ -30,6 +46,8 @@ interface ProcessingResult {
   video_metadata: VideoMetadata;
   lecture_notes: string;
   ai_tools: AITool[];
+  concepts?: Concept[];
+  content_type?: ContentType;
   processing_time: number;
   agent_execution_order: string[];
 }
@@ -167,8 +185,13 @@ export default async function HistoryDetailPage({ params }: PageProps) {
                     {data.processing_time.toFixed(1)}s processing time
                   </Badge>
                   <Badge variant="outline">
-                    {data.ai_tools.length} AI tools found
+                    {(data.concepts?.length || data.ai_tools.length)} {data.concepts?.length ? "concepts" : "AI tools"} found
                   </Badge>
+                  {data.content_type && (
+                    <Badge variant="outline" className="capitalize">
+                      {data.content_type.primary_type}
+                    </Badge>
+                  )}
                 </div>
               </CardDescription>
             </CardHeader>
@@ -213,51 +236,96 @@ export default async function HistoryDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
-          {/* AI Tools */}
-          {data.ai_tools && data.ai_tools.length > 0 && (
+          {/* Key Concepts (or legacy AI Tools) */}
+          {((data.concepts && data.concepts.length > 0) || (data.ai_tools && data.ai_tools.length > 0)) && (
             <Card className="backdrop-blur-xl bg-background/80 border-border/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-3">
-                  AI Tools Detected
+                  {data.concepts?.length ? "Key Concepts" : "AI Tools Detected"}
                   <span className="text-lg font-normal text-muted-foreground">
-                    ({data.ai_tools.length})
+                    ({data.concepts?.length || data.ai_tools.length})
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
-                  {data.ai_tools.map((tool: AITool, index: number) => (
-                    <div
-                      key={index}
-                      className="p-4 border border-border/50 rounded-lg bg-card/50 space-y-3"
-                    >
-                      <div className="space-y-2">
-                        <div className="font-semibold text-lg text-foreground">
-                          {tool.tool_name}
+                  {/* Display Concepts if available */}
+                  {data.concepts && data.concepts.length > 0 ? (
+                    data.concepts.map((concept: Concept, index: number) => (
+                      <div
+                        key={index}
+                        className="p-4 border border-border/50 rounded-lg bg-card/50 space-y-3"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="font-semibold text-lg text-foreground">
+                              {concept.name}
+                            </div>
+                            {concept.importance === "high" && (
+                              <Badge variant="default" className="bg-amber-500/20 text-amber-500 border-amber-500/30">
+                                Key
+                              </Badge>
+                            )}
+                          </div>
+                          {concept.definition && (
+                            <p className="text-sm text-foreground">
+                              {concept.definition}
+                            </p>
+                          )}
+                          {concept.context_snippet && (
+                            <p className="text-sm text-muted-foreground italic">
+                              &ldquo;{concept.context_snippet}&rdquo;
+                            </p>
+                          )}
                         </div>
-                        {tool.context_snippet && (
-                          <p className="text-sm text-muted-foreground italic">
-                            &ldquo;{tool.context_snippet}&rdquo;
-                          </p>
-                        )}
-                        {tool.usage_context && (
-                          <p className="text-sm text-foreground">
-                            {tool.usage_context}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        {tool.category && (
-                          <Badge variant="secondary">{tool.category}</Badge>
-                        )}
-                        {tool.confidence_score && (
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge variant="secondary">{concept.category}</Badge>
                           <Badge variant="outline">
-                            {Math.round(tool.confidence_score * 100)}% confidence
+                            {Math.round(concept.confidence_score * 100)}% confidence
                           </Badge>
-                        )}
+                          {concept.importance !== "high" && (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              {concept.importance}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    /* Fallback to legacy AI Tools */
+                    data.ai_tools.map((tool: AITool, index: number) => (
+                      <div
+                        key={index}
+                        className="p-4 border border-border/50 rounded-lg bg-card/50 space-y-3"
+                      >
+                        <div className="space-y-2">
+                          <div className="font-semibold text-lg text-foreground">
+                            {tool.tool_name}
+                          </div>
+                          {tool.context_snippet && (
+                            <p className="text-sm text-muted-foreground italic">
+                              &ldquo;{tool.context_snippet}&rdquo;
+                            </p>
+                          )}
+                          {tool.usage_context && (
+                            <p className="text-sm text-foreground">
+                              {tool.usage_context}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {tool.category && (
+                            <Badge variant="secondary">{tool.category}</Badge>
+                          )}
+                          {tool.confidence_score && (
+                            <Badge variant="outline">
+                              {Math.round(tool.confidence_score * 100)}% confidence
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

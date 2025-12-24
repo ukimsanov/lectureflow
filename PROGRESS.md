@@ -1,129 +1,153 @@
 # LectureFlow - Implementation Progress
 
-> **Last Updated:** December 19, 2025
+> **Last Updated:** December 21, 2025
+> **Current Phase:** Phase 1 - Foundation (COMPLETED)
 
 ---
 
-## Current Sprint: UI Enhancement
+## Active Sprint: Full Product Pivot - Phase 1 Complete!
 
-### Completed
-- [x] Split page.tsx (~895 lines → ~436 lines, 51% reduction)
-- [x] Add environment variable for backend API URL (5 files updated)
-- [x] Add React Error Boundaries (error.tsx, global-error.tsx, not-found.tsx)
-- [x] Create PROGRESS.md and PLAN.md
-- [x] Install Magic UI components (typing-animation, number-ticker, confetti, border-beam, animated-list, orbiting-circles)
-- [x] Install Aceternity 3d-wrapper component
-- [x] Add Border Beam effect to progress tracker card (glowing animated border during processing)
-- [x] Add Confetti celebration on successful processing completion
-- [x] Add Number Ticker animation for cache age display
-- [x] Add Orbiting Circles in hero section (3-agent workflow visualization)
+### Just Completed (This Session)
+- [x] **Generalized Concept Extraction** - App now works for ANY educational content
+- [x] Created `concept_extractor.py` with smart content-type detection
+- [x] Added `Concept` and `ContentType` models to backend
+- [x] Updated orchestrator to use `ConceptExtractor`
+- [x] Updated SSE streaming endpoint to send concepts
+- [x] Updated frontend `AIToolsGrid` to show "Key Concepts" with content type
+- [x] Updated `ToolDetailModal` to handle both legacy AITool and new Concept
+- [x] Updated `types/index.ts` with Concept and ContentType interfaces
+- [x] Updated history detail page to display concepts
+- [x] Maintained backward compatibility with legacy AITool format
 
-### In Progress
-- [ ] Add Aceternity: 3D Card Effect (AI tool cards)
-
-### Pending
-- [ ] Add Origin UI: Enhanced Input (URL input with validation)
-- [ ] Add authentication (NextAuth.js or Clerk)
-- [ ] Add rate limiting to FastAPI backend
-- [ ] Deploy frontend to Vercel
-- [ ] Deploy backend to Fly.io
+### Content Types Now Supported
+- **Science**: Formulas, theories, scientists, experiments
+- **History**: Dates, events, figures, causes/effects
+- **Business**: Frameworks, case studies, metrics
+- **Tech**: Tools, libraries, architectures
+- **Math**: Formulas, proofs, theorems
+- **General**: Key terms, definitions, quotes
 
 ---
 
-## Session Log
+## Files Changed (This Session)
 
-### Session: December 19, 2025
-
-**Phase 1: Code Quality & Refactoring**
-
-| Task | Status | Details |
-|------|--------|---------|
-| Split page.tsx | Done | Reduced from ~895 to ~436 lines (51% reduction) |
-| Environment variables | Done | Updated 5 files to use `NEXT_PUBLIC_API_URL` |
-| Error boundaries | Done | Created error.tsx, global-error.tsx, not-found.tsx |
-| TypeScript types | Done | Created `src/types/index.ts` with shared interfaces |
-
-**Files Created:**
+### Backend
 ```
-frontend/src/types/index.ts
-frontend/src/components/processing/VideoMetadataCard.tsx
-frontend/src/components/processing/LectureNotesCard.tsx
-frontend/src/components/processing/AIToolsGrid.tsx
-frontend/src/components/processing/ToolDetailModal.tsx
-frontend/src/components/processing/TranscriptModal.tsx
-frontend/src/components/processing/index.ts
-frontend/src/app/error.tsx
-frontend/src/app/global-error.tsx
-frontend/src/app/not-found.tsx
-frontend/.env.example
+backend/app/tools/concept_extractor.py     # NEW - Generalized extraction
+backend/app/tools/__init__.py              # Updated exports
+backend/app/agents/orchestrator.py         # Use ConceptExtractor
+backend/app/models.py                      # Added Concept, ContentType
+backend/app/main.py                        # Updated streaming endpoint
 ```
 
-**Files Updated:**
+### Frontend
 ```
-frontend/src/lib/utils.ts (added API_BASE_URL, formatDuration)
-frontend/src/app/page.tsx (refactored, uses new components, added UI enhancements)
-frontend/src/app/history/page.tsx (env var)
-frontend/src/app/history/[id]/page.tsx (env var)
-frontend/src/app/history/history-table.tsx (env var)
-frontend/src/components/preset-videos.tsx (env var)
-frontend/src/components/processing/VideoMetadataCard.tsx (added NumberTicker)
-```
-
-**UI Components Installed:**
-```
-frontend/src/components/ui/typing-animation.tsx
-frontend/src/components/ui/number-ticker.tsx
-frontend/src/components/ui/confetti.tsx
-frontend/src/components/ui/border-beam.tsx
-frontend/src/components/ui/animated-list.tsx
-frontend/src/components/ui/orbiting-circles.tsx
-frontend/src/components/ui/3d-wrapper.tsx
+frontend/src/types/index.ts                            # Added Concept, ContentType
+frontend/src/components/processing/AIToolsGrid.tsx     # Updated for concepts
+frontend/src/components/processing/ToolDetailModal.tsx # Updated for concepts
+frontend/src/app/page.tsx                              # Handle concepts in SSE
+frontend/src/app/history/[id]/page.tsx                 # Display concepts
 ```
 
 ---
 
-## Architecture Changes
+## Next Steps (Phase 2: Study Tools)
 
-### Component Extraction
+### Planned Tasks
+- [ ] Flashcard generation agent (`backend/app/tools/flashcard_generator.py`)
+- [ ] Flashcard UI components (`frontend/src/components/flashcards/`)
+- [ ] Quiz generation agent (`backend/app/tools/quiz_generator.py`)
+- [ ] Quiz UI components (`frontend/src/components/quiz/`)
 
-**Before:**
-```
-frontend/src/app/page.tsx (~895 lines)
-└── All processing logic, modals, cards in one file
-```
-
-**After:**
-```
-frontend/src/app/page.tsx (~436 lines)
-└── frontend/src/components/processing/
-    ├── VideoMetadataCard.tsx    # Video info + cache status
-    ├── LectureNotesCard.tsx     # Markdown notes + export
-    ├── AIToolsGrid.tsx          # Tool cards grid
-    ├── ToolDetailModal.tsx      # Individual tool details
-    ├── TranscriptModal.tsx      # Full transcript view
-    └── index.ts                 # Barrel export
-```
-
-### Environment Configuration
-
-**Before:**
-```typescript
-// Hardcoded in multiple files
-fetch("http://127.0.0.1:8000/api/...")
-```
-
-**After:**
-```typescript
-// Uses environment variable with fallback
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-fetch(`${apiUrl}/api/...`)
+### Database Schema to Add
+```sql
+CREATE TABLE flashcards (
+  id UUID PRIMARY KEY,
+  processing_result_id UUID REFERENCES processing_results(id),
+  question TEXT,
+  answer TEXT,
+  difficulty VARCHAR(20),
+  timestamp_seconds INTEGER
+);
 ```
 
 ---
 
-## Next Steps
+## Previous Sessions
 
-1. **UI Enhancement** - Add premium components from Magic UI & Aceternity
-2. **Authentication** - Implement NextAuth.js or Clerk
-3. **Rate Limiting** - Add slowapi to FastAPI backend
-4. **Deployment** - Deploy to Vercel (frontend) and Fly.io (backend)
+### December 21, 2025 (Earlier)
+- [x] Research competitive landscape (NotebookLM, NoteGPT, Mindgrasp)
+- [x] Create comprehensive enhancement plan (PLAN.md)
+- [x] Identify Phase 1 implementation steps
+
+### December 19-20, 2025
+- [x] Split page.tsx (~895 lines to ~436 lines, 51% reduction)
+- [x] Add environment variable for backend API URL
+- [x] Add React Error Boundaries
+- [x] Install Magic UI components
+- [x] Add Border Beam effect to progress tracker card
+- [x] Add Confetti celebration on completion
+- [x] Add Orbiting Circles in hero
+
+---
+
+## Key Decisions Made
+
+1. **Portfolio + Product Quality**: Building a portfolio showcase that demonstrates full product thinking
+
+2. **Expand Content Scope**: Moving from AI-only to ALL educational content (science, history, business, math, etc.)
+
+3. **Full Roadmap Approved**:
+   - Phase 1: Foundation (concepts, timestamps) ← **COMPLETE**
+   - Phase 2: Study Tools (flashcards, quizzes) ← **UP NEXT**
+   - Phase 3: Audio Overview (podcast generation)
+   - Phase 4: Chat with Lecture (RAG)
+   - Phase 5: Polish (mind maps, exports)
+
+---
+
+## Critical Context for New Conversations
+
+### What This App Does
+LectureFlow is an AI-powered YouTube lecture notes generator:
+1. Takes any YouTube video URL
+2. Extracts transcript
+3. Generates markdown lecture notes (Gemini 2.5 Flash)
+4. Extracts key concepts for ANY subject (GPT-4o-mini)
+5. Caches results for 7 days
+
+### Tech Stack
+- **Frontend**: Next.js 15.5.6, React 19, Tailwind CSS v4, shadcn/ui
+- **Backend**: FastAPI 0.115, LangGraph 1.0, SQLAlchemy 2.0
+- **Database**: PostgreSQL
+- **AI**: Gemini 2.5 Flash + GPT-4o-mini
+
+### Key Files
+```
+backend/
+├── app/
+│   ├── agents/orchestrator.py  # LangGraph multi-agent orchestration
+│   ├── tools/
+│   │   ├── youtube_tool.py     # Transcript extraction
+│   │   ├── summarizer.py       # Gemini notes generation
+│   │   └── concept_extractor.py # GPT-4o-mini concept extraction
+│   └── models.py               # Pydantic models (Concept, ContentType)
+
+frontend/
+├── src/
+│   ├── app/page.tsx            # Main page with streaming UI
+│   ├── components/processing/  # Result display components
+│   └── types/index.ts          # TypeScript interfaces
+```
+
+### Running the App
+```bash
+# Backend (requires Python 3.11, PostgreSQL)
+cd backend
+source venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd frontend
+npm run dev
+```

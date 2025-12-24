@@ -24,7 +24,7 @@ import {
   TranscriptModal,
 } from "@/components/processing";
 import { formatDuration, API_BASE_URL } from "@/lib/utils";
-import type { VideoMetadata, AITool, ProcessingStep, CacheInfo } from "@/types";
+import type { VideoMetadata, AITool, Concept, ContentType, ProcessingStep, CacheInfo } from "@/types";
 
 // Loading indicator component
 function LoadingIndicator() {
@@ -41,11 +41,13 @@ export default function Home() {
   const [streamedNotes, setStreamedNotes] = useState<string>("");
   const [streamedMetadata, setStreamedMetadata] = useState<VideoMetadata | null>(null);
   const [streamedTools, setStreamedTools] = useState<AITool[]>([]);
+  const [streamedConcepts, setStreamedConcepts] = useState<Concept[]>([]);
+  const [streamedContentType, setStreamedContentType] = useState<ContentType | null>(null);
   const [streamedTranscript, setStreamedTranscript] = useState<string>("");
   const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
 
   // Modal state
-  const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
+  const [selectedTool, setSelectedTool] = useState<AITool | Concept | null>(null);
   const [toolModalOpen, setToolModalOpen] = useState(false);
   const [transcriptModalOpen, setTranscriptModalOpen] = useState(false);
 
@@ -53,7 +55,7 @@ export default function Home() {
   const [steps, setSteps] = useState<ProcessingStep[]>([
     { id: "fetch", label: "Fetch transcript", status: "pending" },
     { id: "generate", label: "Generate lecture notes", status: "pending" },
-    { id: "extract", label: "Extract AI tools", status: "pending" },
+    { id: "extract", label: "Extract key concepts", status: "pending" },
   ]);
 
   const handleSubmit = async (e: React.FormEvent, forceReprocess = false) => {
@@ -63,13 +65,15 @@ export default function Home() {
     setStreamedNotes("");
     setStreamedMetadata(null);
     setStreamedTools([]);
+    setStreamedConcepts([]);
+    setStreamedContentType(null);
     setCacheInfo(null);
 
     // Reset steps and immediately start fetching
     setSteps([
       { id: "fetch", label: "Fetch transcript", status: "in_progress" },
       { id: "generate", label: "Generate lecture notes", status: "pending" },
-      { id: "extract", label: "Extract AI tools", status: "pending" },
+      { id: "extract", label: "Extract key concepts", status: "pending" },
     ]);
 
     try {
@@ -117,6 +121,19 @@ export default function Home() {
 
             case "tools":
               setStreamedTools(data.data);
+              setSteps(prev => prev.map(s =>
+                s.id === "extract" ? { ...s, status: "completed" } : s
+              ));
+              break;
+
+            case "concepts":
+              // New generalized concepts format
+              setStreamedConcepts(data.data.concepts || []);
+              setStreamedContentType(data.data.content_type || null);
+              // Also set tools for backward compatibility
+              if (data.data.ai_tools) {
+                setStreamedTools(data.data.ai_tools);
+              }
               setSteps(prev => prev.map(s =>
                 s.id === "extract" ? { ...s, status: "completed" } : s
               ));
@@ -277,7 +294,7 @@ export default function Home() {
     }
   };
 
-  const handleToolClick = (tool: AITool) => {
+  const handleToolClick = (tool: AITool | Concept) => {
     setSelectedTool(tool);
     setToolModalOpen(true);
   };
@@ -445,6 +462,8 @@ export default function Home() {
 
               <AIToolsGrid
                 tools={streamedTools}
+                concepts={streamedConcepts}
+                contentType={streamedContentType || undefined}
                 isStreaming={isStreaming}
                 onToolClick={handleToolClick}
               />
