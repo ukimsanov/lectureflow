@@ -107,6 +107,35 @@ class ContentType(BaseModel):
     keywords_matched: List[str] = Field(default_factory=list, description="Keywords that matched this type")
 
 
+# ============================================================================
+# Phase 2: Study Tools Models (Flashcards & Quiz)
+# ============================================================================
+
+class Flashcard(BaseModel):
+    """Individual flashcard generated from lecture content"""
+    question: str = Field(..., description="The question or prompt")
+    answer: str = Field(..., description="The answer or response")
+    concept_name: str = Field(..., description="Name of the related concept")
+    difficulty: str = Field("medium", description="Difficulty level: easy, medium, hard")
+    category: str = Field(..., description="Category: term, definition, formula, person, event, etc.")
+
+
+class QuizQuestion(BaseModel):
+    """Multiple choice quiz question"""
+    question: str = Field(..., description="The quiz question")
+    options: List[str] = Field(..., description="4 answer options", min_length=4, max_length=4)
+    correct_index: int = Field(..., description="Index of correct answer (0-3)", ge=0, le=3)
+    explanation: str = Field(..., description="Explanation of the correct answer")
+    concept_name: str = Field(..., description="Name of the related concept")
+    difficulty: str = Field("medium", description="Difficulty level: easy, medium, hard")
+
+
+class StudyMaterials(BaseModel):
+    """Complete study materials generated from lecture"""
+    flashcards: List[Flashcard] = Field(default_factory=list, description="Generated flashcards")
+    quiz_questions: List[QuizQuestion] = Field(default_factory=list, description="Generated quiz questions")
+
+
 class MultiAgentResult(BaseModel):
     """Complete result from multi-agent processing"""
     video_metadata: VideoMetadata
@@ -114,6 +143,8 @@ class MultiAgentResult(BaseModel):
     ai_tools: List[AITool] = Field(default_factory=list, description="Legacy: AI tools (backward compat)")
     concepts: List[Concept] = Field(default_factory=list, description="Key concepts extracted by GPT-4o-mini")
     content_type: Optional[ContentType] = Field(None, description="Detected content type of the lecture")
+    flashcards: List[Flashcard] = Field(default_factory=list, description="Generated flashcards")
+    quiz_questions: List[QuizQuestion] = Field(default_factory=list, description="Generated quiz questions")
     processing_time: float = Field(..., description="Total time taken to process (seconds)")
     agent_execution_order: List[str] = Field(
         default_factory=list,

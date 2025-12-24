@@ -40,7 +40,7 @@ from app.models import (
     AITool,
     VideoMetadata
 )
-from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor
+from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor, FlashcardGenerator, QuizGenerator
 from app.agents import MultiAgentOrchestrator
 from app.database import get_db, dispose_engine
 from app.database.connection import get_database_url
@@ -618,6 +618,7 @@ async def process_video_stream(
 
             summarizer = LectureSummarizer()
             chunk_count = 0
+            lecture_notes_buffer = []  # Accumulate chunks for database save
 
             # Stream lecture notes chunks
             async for chunk in summarizer.summarize_stream(
@@ -630,12 +631,15 @@ async def process_video_stream(
                     return
 
                 chunk_count += 1
+                lecture_notes_buffer.append(chunk)
                 yield {
                     "event": "message",
                     "data": json.dumps({"type": "chunk", "data": chunk})
                 }
 
-            print(f"✅ Lecture notes streamed: {chunk_count} chunks")
+            # Combine chunks into full lecture notes
+            full_lecture_notes = "".join(lecture_notes_buffer)
+            print(f"✅ Lecture notes streamed: {chunk_count} chunks ({len(full_lecture_notes)} chars)")
 
             # Notify frontend that notes generation is complete
             yield {
@@ -694,12 +698,68 @@ async def process_video_stream(
             }
 
             # ================================================================
-            # Step 4: Complete
+            # Step 4: Save to Database
+            # ================================================================
+            result_id = None
+            try:
+                print("💾 Step 4: Saving to database...")
+                video_metadata = transcript_data.metadata
+
+                # Check if video already exists
+                result_query = await db.execute(
+                    select(Video).where(Video.video_id == video_metadata.video_id)
+                )
+                video_record = result_query.scalar_one_or_none()
+
+                if video_record:
+                    video_record.times_processed += 1
+                    video_record.last_processed_at = datetime.now(timezone.utc)
+                    print(f"📊 Updated existing video (processed {video_record.times_processed} times)")
+                else:
+                    video_record = Video(
+                        video_id=video_metadata.video_id,
+                        video_url=video_metadata.video_url,
+                        title=video_metadata.video_title,
+                        channel_name=video_metadata.channel_name,
+                        duration=video_metadata.duration,
+                        times_processed=1,
+                        last_processed_at=datetime.now(timezone.utc)
+                    )
+                    db.add(video_record)
+                    await db.flush()
+                    print(f"💾 Created new video record")
+
+                # Create processing result record
+                processing_record = ProcessingResult(
+                    video_id=video_record.id,
+                    transcript_text=transcript_data.full_text,
+                    transcript_length=len(transcript_data.full_text),
+                    lecture_notes=full_lecture_notes,
+                    ai_tools=ai_tools_compat,
+                    ai_tools_count=len(ai_tools_compat),
+                    processing_time_seconds=0,  # TODO: track actual time
+                    agent_execution_order=["fetch_transcript", "summarize", "extract_concepts"]
+                )
+                db.add(processing_record)
+                await db.commit()
+
+                result_id = str(processing_record.id)
+                print(f"✅ Saved to database with ID: {result_id}")
+
+            except Exception as db_error:
+                print(f"⚠️  Database save failed (non-fatal): {db_error}")
+                # Don't fail the stream, just log the error
+
+            # ================================================================
+            # Step 5: Complete
             # ================================================================
             print("🎉 Stream processing complete!\n")
             yield {
                 "event": "message",
-                "data": json.dumps({"type": "complete"})
+                "data": json.dumps({
+                    "type": "complete",
+                    "data": {"result_id": result_id} if result_id else None
+                })
             }
 
         except ValueError as e:
@@ -719,6 +779,83 @@ async def process_video_stream(
             }
 
     return EventSourceResponse(event_generator())
+
+
+# ============================================================================
+# On-Demand Study Materials Generation (Phase 2)
+# ============================================================================
+
+from pydantic import BaseModel
+from typing import List
+from app.models import Concept, Flashcard, QuizQuestion, StudyMaterials
+
+
+class StudyMaterialsRequest(BaseModel):
+    """Request model for on-demand study materials generation"""
+    concepts: List[Concept]
+    transcript: str = ""
+    max_flashcards: int = 15
+    max_quiz_questions: int = 10
+
+
+class StudyMaterialsResponse(BaseModel):
+    """Response model for study materials generation"""
+    success: bool
+    data: StudyMaterials | None = None
+    error: str | None = None
+
+
+@app.post("/api/study-materials/generate", response_model=StudyMaterialsResponse)
+async def generate_study_materials(request: StudyMaterialsRequest) -> StudyMaterialsResponse:
+    """
+    Generate study materials (flashcards and quiz) from extracted concepts.
+
+    This is an on-demand endpoint - called when user clicks "Generate Study Materials"
+    after the main processing is complete.
+
+    Args:
+        request: StudyMaterialsRequest with concepts and optional transcript
+
+    Returns:
+        StudyMaterialsResponse with flashcards and quiz questions
+    """
+    try:
+        print(f"📚 Generating study materials for {len(request.concepts)} concepts...")
+
+        # Generate flashcards
+        flashcard_generator = FlashcardGenerator()
+        flashcards = flashcard_generator.generate(
+            concepts=request.concepts,
+            transcript=request.transcript,
+            max_flashcards=request.max_flashcards
+        )
+        print(f"✅ Generated {len(flashcards)} flashcards")
+
+        # Generate quiz questions
+        quiz_generator = QuizGenerator()
+        quiz_questions = quiz_generator.generate(
+            concepts=request.concepts,
+            transcript=request.transcript,
+            max_questions=request.max_quiz_questions
+        )
+        print(f"✅ Generated {len(quiz_questions)} quiz questions")
+
+        return StudyMaterialsResponse(
+            success=True,
+            data=StudyMaterials(
+                flashcards=flashcards,
+                quiz_questions=quiz_questions
+            )
+        )
+
+    except Exception as e:
+        print(f"❌ Study materials generation error: {e}")
+        import traceback
+        traceback.print_exc()
+        return StudyMaterialsResponse(
+            success=False,
+            error=str(e)
+        )
 
 
 # ============================================================================

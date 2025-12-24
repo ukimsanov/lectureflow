@@ -24,7 +24,8 @@ from app.models import (
     DeleteHistoryResponse,
     MultiAgentResult,
     VideoMetadata,
-    AITool
+    AITool,
+    Concept
 )
 from app.database import get_db
 from app.database.models import Video, ProcessingResult
@@ -189,10 +190,28 @@ async def get_history_detail(
         # Convert AI tools from JSON to Pydantic models
         ai_tools = [AITool(**tool) for tool in processing_result.ai_tools]
 
+        # Convert ai_tools to concepts for study materials feature
+        # The ai_tools are saved in a backward-compatible format
+        concepts = []
+        for tool in processing_result.ai_tools:
+            try:
+                concepts.append(Concept(
+                    name=tool.get("tool_name", "Unknown"),
+                    category=tool.get("category", "general"),
+                    definition=tool.get("usage_context"),
+                    context_snippet=tool.get("context_snippet", ""),
+                    timestamp=tool.get("timestamp"),
+                    confidence_score=tool.get("confidence_score", 0.8),
+                    importance="medium"  # Default importance for legacy data
+                ))
+            except Exception:
+                pass  # Skip invalid entries
+
         result_data = MultiAgentResult(
             video_metadata=video_metadata,
             lecture_notes=processing_result.lecture_notes,
             ai_tools=ai_tools,
+            concepts=concepts,
             processing_time=processing_result.processing_time_seconds,
             agent_execution_order=processing_result.agent_execution_order
         )

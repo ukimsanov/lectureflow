@@ -1,22 +1,34 @@
 # LectureFlow - Implementation Progress
 
-> **Last Updated:** December 21, 2025
-> **Current Phase:** Phase 1 - Foundation (COMPLETED)
+> **Last Updated:** December 24, 2025
+> **Current Phase:** Phase 2 - Study Tools (COMPLETED)
 
 ---
 
-## Active Sprint: Full Product Pivot - Phase 1 Complete!
+## Active Sprint: Phase 2 Study Tools Complete!
 
-### Just Completed (This Session)
+### Just Completed (December 24, 2025)
+
+**Phase 2: Study Tools**
+- [x] Created `flashcard_generator.py` - GPT-4o-mini flashcard generation
+- [x] Created `quiz_generator.py` - GPT-4o-mini quiz generation
+- [x] Created on-demand `/api/study-materials/generate` endpoint
+- [x] Created `FlashcardsCard.tsx` - Flippable cards with navigation, shuffle, CSV/Anki export
+- [x] Created `QuizCard.tsx` - Interactive quiz with scoring and explanations
+- [x] Created `StudyMaterialsCard.tsx` - "Generate Study Materials" button wrapper
+- [x] Added Flashcard and QuizQuestion TypeScript types
+- [x] Added study materials to history detail page
+- [x] Fixed database persistence in streaming endpoint
+- [x] Added result_id to complete event with "View in History" toast
+- [x] Made Key Concepts grid consistent between main page and history page
+
+**Previous Session (Phase 1: Foundation)**
 - [x] **Generalized Concept Extraction** - App now works for ANY educational content
 - [x] Created `concept_extractor.py` with smart content-type detection
 - [x] Added `Concept` and `ContentType` models to backend
-- [x] Updated orchestrator to use `ConceptExtractor`
 - [x] Updated SSE streaming endpoint to send concepts
 - [x] Updated frontend `AIToolsGrid` to show "Key Concepts" with content type
 - [x] Updated `ToolDetailModal` to handle both legacy AITool and new Concept
-- [x] Updated `types/index.ts` with Concept and ContentType interfaces
-- [x] Updated history detail page to display concepts
 - [x] Maintained backward compatibility with legacy AITool format
 
 ### Content Types Now Supported

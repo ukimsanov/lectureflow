@@ -35,6 +35,24 @@ export interface ContentType {
   keywords_matched: string[];
 }
 
+// Study Materials Types
+export interface Flashcard {
+  question: string;
+  answer: string;
+  concept_name: string;
+  difficulty: "easy" | "medium" | "hard";
+  category: string;
+}
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];  // 4 options
+  correct_index: number;  // 0-3
+  explanation: string;
+  concept_name: string;
+  difficulty: "easy" | "medium" | "hard";
+}
+
 export type StepStatus = "pending" | "in_progress" | "completed";
 
 export interface ProcessingStep {

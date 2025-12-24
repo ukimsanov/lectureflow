@@ -21,6 +21,7 @@ import {
   AIToolsGrid,
   ToolDetailModal,
   TranscriptModal,
+  StudyMaterialsCard,
 } from "@/components/processing";
 import { formatDuration, API_BASE_URL } from "@/lib/utils";
 import type { VideoMetadata, AITool, Concept, ContentType, ProcessingStep, CacheInfo } from "@/types";
@@ -44,6 +45,7 @@ export default function Home() {
   const [streamedContentType, setStreamedContentType] = useState<ContentType | null>(null);
   const [streamedTranscript, setStreamedTranscript] = useState<string>("");
   const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
+  const [resultId, setResultId] = useState<string | null>(null);
 
   // Modal state
   const [selectedTool, setSelectedTool] = useState<AITool | Concept | null>(null);
@@ -67,6 +69,7 @@ export default function Home() {
     setStreamedConcepts([]);
     setStreamedContentType(null);
     setCacheInfo(null);
+    setResultId(null);
 
     // Reset steps and immediately start fetching
     setSteps([
@@ -142,6 +145,16 @@ export default function Home() {
               setIsStreaming(false);
               setSteps(prev => prev.map(s => ({ ...s, status: "completed" })));
               eventSource.close();
+              // Store result ID for history link
+              if (data.data?.result_id) {
+                setResultId(data.data.result_id);
+                toast.success("Processing complete! Saved to history.", {
+                  action: {
+                    label: "View in History",
+                    onClick: () => window.location.href = `/history/${data.data.result_id}`
+                  }
+                });
+              }
               // Celebrate with confetti!
               confetti({
                 particleCount: 100,
@@ -447,6 +460,14 @@ export default function Home() {
                 isStreaming={isStreaming}
                 onToolClick={handleToolClick}
               />
+
+              {/* Study Materials - Optional generation */}
+              {!isStreaming && streamedConcepts.length > 0 && (
+                <StudyMaterialsCard
+                  concepts={streamedConcepts}
+                  transcript={streamedTranscript}
+                />
+              )}
             </div>
           )}
         </div>
