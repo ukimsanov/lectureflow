@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { marked } from "marked";
 import confetti from "canvas-confetti";
-import { History, FileText, Sparkles, PlayCircle } from "lucide-react";
+import { History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
@@ -14,7 +14,6 @@ import { BackgroundBeams } from "@/components/ui/background-beams";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { ProgressTracker } from "@/components/ui/progress-tracker";
 import { BorderBeam } from "@/components/ui/border-beam";
-import { OrbitingCircles } from "@/components/ui/orbiting-circles";
 import { PresetVideos } from "@/components/preset-videos";
 import {
   VideoMetadataCard,
@@ -333,29 +332,10 @@ export default function Home() {
       <div className="relative z-10 min-h-screen p-6 md:p-12">
         <div className="max-w-5xl mx-auto space-y-12">
           {/* Header */}
-          <div className="text-center space-y-8 pt-20 pb-4">
-            {/* Orbiting Circles - 3 Agent Workflow Visualization */}
-            <div className="relative flex h-[320px] w-full items-center justify-center">
-              <AnimatedGradientText className="text-5xl md:text-7xl font-bold tracking-tight z-10">
-                AI Lecture Notes
-              </AnimatedGradientText>
-              <OrbitingCircles
-                radius={120}
-                duration={20}
-                path={false}
-                iconSize={40}
-              >
-                <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 p-2 shadow-lg">
-                  <PlayCircle className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 p-2 shadow-lg">
-                  <FileText className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-purple-600 p-2 shadow-lg">
-                  <Sparkles className="h-6 w-6 text-white" />
-                </div>
-              </OrbitingCircles>
-            </div>
+          <div className="text-center space-y-6 pt-20 pb-4">
+            <AnimatedGradientText className="text-5xl md:text-7xl font-bold tracking-tight">
+              AI Lecture Notes
+            </AnimatedGradientText>
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
               Transform YouTube lectures into comprehensive notes with AI-powered multi-agent analysis
             </p>
