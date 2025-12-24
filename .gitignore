@@ -74,3 +74,14 @@ uv.lock
 # Legacy (removed from project)
 output/
 Users/
+
+# Test files
+*.mp3
+test_*.json
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Claude plans
+.claude/
