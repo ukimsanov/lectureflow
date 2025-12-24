@@ -22,6 +22,7 @@ import {
   ToolDetailModal,
   TranscriptModal,
   StudyMaterialsCard,
+  PodcastCard,
 } from "@/components/processing";
 import { formatDuration, API_BASE_URL } from "@/lib/utils";
 import type { VideoMetadata, AITool, Concept, ContentType, ProcessingStep, CacheInfo } from "@/types";
@@ -466,6 +467,15 @@ export default function Home() {
                 <StudyMaterialsCard
                   concepts={streamedConcepts}
                   transcript={streamedTranscript}
+                />
+              )}
+
+              {/* Audio Overview (Podcast) - Optional generation */}
+              {!isStreaming && streamedConcepts.length > 0 && streamedMetadata && (
+                <PodcastCard
+                  concepts={streamedConcepts}
+                  lectureNotes={streamedNotes}
+                  videoTitle={streamedMetadata.video_title}
                 />
               )}
             </div>

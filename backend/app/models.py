@@ -201,3 +201,42 @@ class DeleteHistoryResponse(BaseModel):
     success: bool
     message: Optional[str] = None
     error: Optional[str] = None
+
+
+# ============================================================================
+# Phase 4: Audio Overview (Podcast) Models
+# ============================================================================
+
+class PodcastDialogue(BaseModel):
+    """Individual dialogue line in podcast script"""
+    speaker: str = Field(..., description="Speaker name: 'Alex' or 'Jordan'")
+    text: str = Field(..., description="What the speaker says")
+
+
+class PodcastScript(BaseModel):
+    """Complete podcast script with two hosts"""
+    title: str = Field(..., description="Podcast episode title")
+    introduction: str = Field(..., description="Brief intro hook (1-2 sentences)")
+    dialogue: List[PodcastDialogue] = Field(default_factory=list, description="Back-and-forth dialogue")
+    conclusion: str = Field(..., description="Wrap-up and key takeaways")
+
+
+class PodcastEpisode(BaseModel):
+    """Generated podcast episode with audio"""
+    script: PodcastScript = Field(..., description="The podcast script")
+    audio_base64: Optional[str] = Field(None, description="Base64 encoded MP3 audio")
+    duration_seconds: Optional[int] = Field(None, description="Audio duration in seconds")
+
+
+class PodcastRequest(BaseModel):
+    """Request to generate podcast from lecture content"""
+    concepts: List[Concept] = Field(..., description="Key concepts to discuss")
+    lecture_notes: str = Field(..., description="Lecture notes for context")
+    video_title: str = Field("Lecture", description="Title of the source video")
+
+
+class PodcastResponse(BaseModel):
+    """Response with generated podcast"""
+    success: bool
+    data: Optional[PodcastEpisode] = None
+    error: Optional[str] = None

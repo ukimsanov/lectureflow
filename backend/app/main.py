@@ -40,7 +40,7 @@ from app.models import (
     AITool,
     VideoMetadata
 )
-from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor, FlashcardGenerator, QuizGenerator
+from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor, FlashcardGenerator, QuizGenerator, PodcastScriptGenerator, TTSService
 from app.agents import MultiAgentOrchestrator
 from app.database import get_db, dispose_engine
 from app.database.connection import get_database_url
@@ -853,6 +853,86 @@ async def generate_study_materials(request: StudyMaterialsRequest) -> StudyMater
         import traceback
         traceback.print_exc()
         return StudyMaterialsResponse(
+            success=False,
+            error=str(e)
+        )
+
+
+# ============================================================================
+# On-Demand Podcast Generation (Phase 4)
+# ============================================================================
+
+from app.models import PodcastRequest, PodcastResponse, PodcastEpisode
+
+
+@app.post("/api/podcast/generate", response_model=PodcastResponse)
+async def generate_podcast(request: PodcastRequest) -> PodcastResponse:
+    """
+    Generate a podcast episode from lecture content.
+
+    This is an on-demand endpoint - called when user clicks "Generate Audio Overview"
+    after the main processing is complete.
+
+    Two AI hosts (Alex & Jordan) discuss the lecture content in an engaging
+    2-3 minute conversation using ElevenLabs TTS.
+
+    Args:
+        request: PodcastRequest with concepts, lecture_notes, and video_title
+
+    Returns:
+        PodcastResponse with script and base64 encoded audio
+    """
+    try:
+        print(f"🎙️ Generating podcast for: {request.video_title}")
+        print(f"   Concepts: {len(request.concepts)}")
+
+        # Step 1: Generate podcast script
+        print("📝 Step 1: Generating script...")
+        script_generator = PodcastScriptGenerator()
+        script = script_generator.generate(
+            concepts=request.concepts,
+            lecture_notes=request.lecture_notes,
+            video_title=request.video_title,
+            target_exchanges=15  # ~2-3 min podcast
+        )
+        print(f"✅ Script generated: {len(script.dialogue)} dialogue exchanges")
+
+        # Step 2: Convert to audio with TTS
+        print("🔊 Step 2: Generating audio with ElevenLabs...")
+        tts_service = TTSService()
+
+        # Estimate cost before generating
+        estimated_cost = tts_service.estimate_cost(script)
+        print(f"💰 Estimated cost: ${estimated_cost:.2f}")
+
+        audio_base64, duration_seconds = tts_service.generate_podcast_audio(script)
+        print(f"✅ Audio generated: {duration_seconds} seconds")
+
+        # Build response
+        episode = PodcastEpisode(
+            script=script,
+            audio_base64=audio_base64,
+            duration_seconds=duration_seconds
+        )
+
+        return PodcastResponse(
+            success=True,
+            data=episode
+        )
+
+    except ValueError as e:
+        # Configuration error (missing API key, etc.)
+        print(f"⚠️ Podcast generation configuration error: {e}")
+        return PodcastResponse(
+            success=False,
+            error=str(e)
+        )
+
+    except Exception as e:
+        print(f"❌ Podcast generation error: {e}")
+        import traceback
+        traceback.print_exc()
+        return PodcastResponse(
             success=False,
             error=str(e)
         )

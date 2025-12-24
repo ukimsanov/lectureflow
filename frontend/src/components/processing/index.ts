@@ -7,3 +7,5 @@ export { TranscriptModal } from "./TranscriptModal";
 export { FlashcardsCard } from "./FlashcardsCard";
 export { QuizCard } from "./QuizCard";
 export { StudyMaterialsCard } from "./StudyMaterialsCard";
+export { AudioPlayer } from "./AudioPlayer";
+export { PodcastCard } from "./PodcastCard";

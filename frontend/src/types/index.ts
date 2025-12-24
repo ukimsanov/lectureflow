@@ -66,3 +66,22 @@ export interface CacheInfo {
   cached_at?: string;
   cache_age_hours?: number;
 }
+
+// Podcast Types (Phase 4)
+export interface PodcastDialogue {
+  speaker: "Alex" | "Jordan";
+  text: string;
+}
+
+export interface PodcastScript {
+  title: string;
+  introduction: string;
+  dialogue: PodcastDialogue[];
+  conclusion: string;
+}
+
+export interface PodcastEpisode {
+  script: PodcastScript;
+  audio_base64?: string;
+  duration_seconds?: number;
+}

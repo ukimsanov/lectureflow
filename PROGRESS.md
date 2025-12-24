@@ -1,15 +1,26 @@
 # LectureFlow - Implementation Progress
 
 > **Last Updated:** December 24, 2025
-> **Current Phase:** Phase 2 - Study Tools (COMPLETED)
+> **Current Phase:** Phase 4 - Audio Overview (COMPLETED)
 
 ---
 
-## Active Sprint: Phase 2 Study Tools Complete!
+## Active Sprint: Phase 4 Audio Overview Complete!
 
 ### Just Completed (December 24, 2025)
 
-**Phase 2: Study Tools**
+**Phase 4: Audio Overview (Podcast)**
+- [x] Created `podcast_generator.py` - GPT-4o-mini script generation for two AI hosts
+- [x] Created `tts_service.py` - ElevenLabs TTS integration with pydub audio concatenation
+- [x] Created on-demand `/api/podcast/generate` endpoint
+- [x] Created `AudioPlayer.tsx` - Custom player with speed control, progress bar, download
+- [x] Created `PodcastCard.tsx` - "Generate Audio Overview" button with transcript viewer
+- [x] Added PodcastDialogue, PodcastScript, PodcastEpisode models (Python + TypeScript)
+- [x] Added podcast to main page and history detail page
+- [x] Hosts: Alex (curious host, George voice) & Jordan (expert, Bella voice)
+- [x] Cost: ~$0.40 per 2-3 min podcast (ElevenLabs free tier: 5-7 podcasts/month)
+
+**Phase 2: Study Tools** (Previously Completed)
 - [x] Created `flashcard_generator.py` - GPT-4o-mini flashcard generation
 - [x] Created `quiz_generator.py` - GPT-4o-mini quiz generation
 - [x] Created on-demand `/api/study-materials/generate` endpoint
@@ -22,7 +33,7 @@
 - [x] Added result_id to complete event with "View in History" toast
 - [x] Made Key Concepts grid consistent between main page and history page
 
-**Previous Session (Phase 1: Foundation)**
+**Phase 1: Foundation** (Previously Completed)
 - [x] **Generalized Concept Extraction** - App now works for ANY educational content
 - [x] Created `concept_extractor.py` with smart content-type detection
 - [x] Added `Concept` and `ContentType` models to backend
@@ -41,47 +52,41 @@
 
 ---
 
-## Files Changed (This Session)
+## Files Changed (Phase 4 Session)
 
 ### Backend
 ```
-backend/app/tools/concept_extractor.py     # NEW - Generalized extraction
-backend/app/tools/__init__.py              # Updated exports
-backend/app/agents/orchestrator.py         # Use ConceptExtractor
-backend/app/models.py                      # Added Concept, ContentType
-backend/app/main.py                        # Updated streaming endpoint
+backend/app/tools/podcast_generator.py     # NEW - GPT-4o-mini script generation
+backend/app/tools/tts_service.py           # NEW - ElevenLabs TTS integration
+backend/app/tools/__init__.py              # Added podcast exports
+backend/app/models.py                      # Added PodcastDialogue, PodcastScript, etc.
+backend/app/main.py                        # Added /api/podcast/generate endpoint
 ```
 
 ### Frontend
 ```
-frontend/src/types/index.ts                            # Added Concept, ContentType
-frontend/src/components/processing/AIToolsGrid.tsx     # Updated for concepts
-frontend/src/components/processing/ToolDetailModal.tsx # Updated for concepts
-frontend/src/app/page.tsx                              # Handle concepts in SSE
-frontend/src/app/history/[id]/page.tsx                 # Display concepts
+frontend/src/types/index.ts                            # Added podcast types
+frontend/src/components/processing/AudioPlayer.tsx     # NEW - Custom audio player
+frontend/src/components/processing/PodcastCard.tsx     # NEW - Podcast generation UI
+frontend/src/components/processing/index.ts            # Added exports
+frontend/src/app/page.tsx                              # Added PodcastCard
+frontend/src/app/history/[id]/page.tsx                 # Added podcast to history
+frontend/src/app/history/[id]/HistoryPodcastCard.tsx   # NEW - Client wrapper
 ```
 
 ---
 
-## Next Steps (Phase 2: Study Tools)
+## Next Steps (Phase 5: Chat with Lecture)
 
 ### Planned Tasks
-- [ ] Flashcard generation agent (`backend/app/tools/flashcard_generator.py`)
-- [ ] Flashcard UI components (`frontend/src/components/flashcards/`)
-- [ ] Quiz generation agent (`backend/app/tools/quiz_generator.py`)
-- [ ] Quiz UI components (`frontend/src/components/quiz/`)
+- [ ] RAG implementation with vector database (Pinecone or Chroma)
+- [ ] Semantic chunking of transcript
+- [ ] Chat UI sidebar component
+- [ ] Contextual Q&A about lecture content
 
-### Database Schema to Add
-```sql
-CREATE TABLE flashcards (
-  id UUID PRIMARY KEY,
-  processing_result_id UUID REFERENCES processing_results(id),
-  question TEXT,
-  answer TEXT,
-  difficulty VARCHAR(20),
-  timestamp_seconds INTEGER
-);
-```
+### Setup Required
+- ElevenLabs API key for podcast feature: `ELEVENLABS_API_KEY`
+- Install: `pip install elevenlabs pydub` (pydub requires ffmpeg)
 
 ---
 
@@ -111,10 +116,11 @@ CREATE TABLE flashcards (
 
 3. **Full Roadmap Approved**:
    - Phase 1: Foundation (concepts, timestamps) ← **COMPLETE**
-   - Phase 2: Study Tools (flashcards, quizzes) ← **UP NEXT**
-   - Phase 3: Audio Overview (podcast generation)
-   - Phase 4: Chat with Lecture (RAG)
-   - Phase 5: Polish (mind maps, exports)
+   - Phase 2: Study Tools (flashcards, quizzes) ← **COMPLETE**
+   - Phase 3: Spaced Repetition (FSRS algorithm) ← Skipped (needs user auth)
+   - Phase 4: Audio Overview (podcast generation) ← **COMPLETE**
+   - Phase 5: Chat with Lecture (RAG) ← **UP NEXT**
+   - Phase 6: Polish (mind maps, exports)
 
 ---
 

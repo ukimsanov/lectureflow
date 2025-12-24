@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { HistoryStudyMaterials } from "./HistoryStudyMaterials";
 import { HistoryConceptsGrid } from "./HistoryConceptsGrid";
+import { HistoryPodcastCard } from "./HistoryPodcastCard";
 
 // TypeScript interfaces
 interface AITool {
@@ -247,6 +248,15 @@ export default async function HistoryDetailPage({ params }: PageProps) {
           {/* Study Materials - Optional generation */}
           {data.concepts && data.concepts.length > 0 && (
             <HistoryStudyMaterials concepts={data.concepts} />
+          )}
+
+          {/* Audio Overview (Podcast) - Optional generation */}
+          {data.concepts && data.concepts.length > 0 && (
+            <HistoryPodcastCard
+              concepts={data.concepts}
+              lectureNotes={data.lecture_notes}
+              videoTitle={data.video_metadata.video_title}
+            />
           )}
         </div>
       </div>
