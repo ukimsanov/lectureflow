@@ -238,67 +238,94 @@ export default function Home() {
     if (!streamedNotes || !streamedMetadata) return;
 
     try {
-      toast.info('Generating PDF... This may take a moment');
+      toast.info('Generating PDF...');
 
-      const html = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              @import url('https://fonts.googleapis.com/css2?family=Geist+Sans:wght@400;500;600;700&display=swap');
-              body { font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; padding: 2rem; max-width: 800px; }
-              h1 { font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem; line-height: 1.2; color: #111827; }
-              h2 { font-size: 1.5rem; font-weight: 700; margin: 1.75rem 0 1rem; line-height: 1.3; color: #1f2937; }
-              h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.75rem; line-height: 1.4; color: #374151; }
-              p { margin-bottom: 1rem; line-height: 1.7; }
-              strong { font-weight: 700; }
-              em { font-style: italic; }
-              ul, ol { margin: 1rem 0; padding-left: 2rem; line-height: 1.8; }
-              ul { list-style-type: disc; }
-              ol { list-style-type: decimal; }
-              li { margin: 0.5rem 0; padding-left: 0.5rem; }
-              code { background: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem; }
-              pre { background: #f9fafb; border: 1px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.75rem 0; }
-              pre code { background: transparent; padding: 0; }
-              blockquote { border-left: 4px solid #8b5cf6; background: #f5f3ff; padding: 0.75rem 1rem; margin: 0.75rem 0; }
-              hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
-              .metadata { color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem; }
-            </style>
-          </head>
-          <body>
-            <h1>${streamedMetadata.video_title}</h1>
-            <div class="metadata">
-              <strong>Channel:</strong> ${streamedMetadata.channel_name} |
-              <strong>Duration:</strong> ${formatDuration(streamedMetadata.duration)}
-            </div>
-            <hr />
-            ${marked.parse(streamedNotes)}
-          </body>
-        </html>
+      // Dynamically import jsPDF and html2canvas (lazy loading)
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas')
+      ]);
+
+      // Create a temporary container for rendering
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 800px;
+        padding: 40px;
+        background: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #1a1a1a;
       `;
 
-      const response = await fetch('/api/export-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          html,
-          title: streamedMetadata.video_title.replace(/[^a-z0-9]/gi, '_'),
-        }),
-      });
+      // Build the HTML content
+      container.innerHTML = `
+        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px; color: #111827;">${streamedMetadata.video_title}</h1>
+        <p style="color: #6b7280; font-size: 12px; margin: 0 0 16px;">
+          <strong>Channel:</strong> ${streamedMetadata.channel_name} |
+          <strong>Duration:</strong> ${formatDuration(streamedMetadata.duration)}
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
+        <div class="content" style="font-size: 14px; line-height: 1.7;">
+          ${marked.parse(streamedNotes)}
+        </div>
+      `;
 
-      if (!response.ok) throw new Error('Failed to generate PDF');
+      // Add styles for markdown elements
+      const style = document.createElement('style');
+      style.textContent = `
+        .content h1 { font-size: 20px; font-weight: 700; margin: 24px 0 12px; color: #111827; }
+        .content h2 { font-size: 18px; font-weight: 700; margin: 20px 0 10px; color: #1f2937; }
+        .content h3 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; color: #374151; }
+        .content p { margin: 0 0 12px; }
+        .content ul, .content ol { margin: 12px 0; padding-left: 24px; }
+        .content li { margin: 4px 0; }
+        .content code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .content pre { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }
+        .content blockquote { border-left: 4px solid #8b5cf6; background: #f5f3ff; padding: 12px 16px; margin: 12px 0; }
+      `;
+      container.appendChild(style);
+      document.body.appendChild(container);
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${streamedMetadata.video_title.replace(/[^a-z0-9]/gi, '_')}_notes.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Render to canvas
+      const canvas = await html2canvas(container, {
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 800,
+      } as Parameters<typeof html2canvas>[1]);
+
+      // Remove the temporary container
+      document.body.removeChild(container);
+
+      // Calculate PDF dimensions (A4)
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download the PDF
+      const filename = `${streamedMetadata.video_title.replace(/[^a-z0-9]/gi, '_')}_notes.pdf`;
+      pdf.save(filename);
 
       toast.success('PDF exported successfully');
     } catch (err) {

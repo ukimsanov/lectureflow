@@ -939,6 +939,14 @@ async def generate_podcast(request: PodcastRequest) -> PodcastResponse:
 
 
 # ============================================================================
+# AWS Lambda Handler (Mangum ASGI Adapter)
+# ============================================================================
+from mangum import Mangum
+
+handler = Mangum(app, lifespan="off")
+
+
+# ============================================================================
 # Development Runner
 # ============================================================================
 if __name__ == "__main__":

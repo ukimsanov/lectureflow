@@ -1,0 +1,16 @@
+#:schema node_modules/wrangler/config-schema.json
+
+account_id = "568051052fcb248c756d306dece6cfb7"
+main = ".open-next/worker.js"
+name = "lectureflow"
+compatibility_date = "2025-12-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets configuration
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Environment variables (public ones baked at build time)
+[vars]
+NEXT_PUBLIC_API_URL = "https://4k6qhzh138.execute-api.us-east-1.amazonaws.com"
