@@ -15,7 +15,7 @@ Supported content types:
 - general: Key terms, definitions, quotes
 """
 import os
-from typing import List, Optional
+from typing import List
 from openai import OpenAI
 from pydantic import BaseModel, Field
 

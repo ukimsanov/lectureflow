@@ -11,7 +11,6 @@ Following FastAPI 0.115+ and SQLAlchemy 2.0 best practices (Oct 2025)
 """
 from typing import Annotated
 from uuid import UUID
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, desc

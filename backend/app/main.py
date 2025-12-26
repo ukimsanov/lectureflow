@@ -14,7 +14,7 @@ import time
 import json
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Dict, Annotated, AsyncGenerator, Optional
+from typing import Annotated, AsyncGenerator, Optional
 from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, HTTPException, status, Depends, Request, Query
@@ -33,8 +33,6 @@ from app.models import (
     ExtractResponse,
     HealthResponse,
     ProcessRequest,
-    ProcessResponse,
-    ProcessedResult,
     MultiAgentResult,
     MultiAgentResponse,
     AITool,
@@ -72,7 +70,7 @@ async def lifespan(app: FastAPI):
     db_url = get_database_url()
     psycopg_url = db_url.replace("+asyncpg", "")  # psycopg doesn't use +asyncpg
 
-    print(f"📊 Connecting to database...")
+    print("📊 Connecting to database...")
 
     # Create PostgreSQL connection pool for LangGraph checkpointing
     async with AsyncConnectionPool(
@@ -315,7 +313,7 @@ async def process_video(
             )
             db.add(video_record)
             await db.flush()  # Get the UUID
-            print(f"💾 Created new video record")
+            print("💾 Created new video record")
 
         # Create processing result record
         processing_record = ProcessingResult(
@@ -331,7 +329,7 @@ async def process_video(
         db.add(processing_record)
 
         # Commit transaction (handled by get_db dependency)
-        print(f"💾 Saved processing results to database")
+        print("💾 Saved processing results to database")
 
         # ====================================================================
         # Build API response
@@ -425,7 +423,7 @@ async def get_cached_result(
             print(f"💾 Cache HIT: Found result from {processing_result.created_at}")
             return (processing_result, video)
         else:
-            print(f"❌ Cache MISS: No recent result found")
+            print("❌ Cache MISS: No recent result found")
             return None
 
     except Exception as e:
@@ -727,7 +725,7 @@ async def process_video_stream(
                     )
                     db.add(video_record)
                     await db.flush()
-                    print(f"💾 Created new video record")
+                    print("💾 Created new video record")
 
                 # Create processing result record
                 processing_record = ProcessingResult(
@@ -787,7 +785,7 @@ async def process_video_stream(
 
 from pydantic import BaseModel
 from typing import List
-from app.models import Concept, Flashcard, QuizQuestion, StudyMaterials
+from app.models import Concept, StudyMaterials
 
 
 class StudyMaterialsRequest(BaseModel):

@@ -28,7 +28,6 @@ from typing import TypedDict, List, Annotated
 import operator
 from langgraph.graph import StateGraph, START, END
 
-from app.models import AITool, Concept, ContentType, VideoMetadata
 from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor
 
 
@@ -276,7 +275,7 @@ class MultiAgentOrchestrator:
         # LangGraph automatically handles parallel execution
         final_state = self.graph.invoke(initial_state)
 
-        print(f"\n✅ Multi-agent processing complete!")
+        print("\n✅ Multi-agent processing complete!")
         print(f"📋 Agent execution order: {' → '.join(final_state['agent_execution_order'])}\n")
 
         return final_state
