@@ -14,8 +14,9 @@ import time
 import json
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncGenerator, Optional
+from typing import Annotated, AsyncGenerator, List, Optional
 from datetime import datetime, timedelta, timezone
+from pydantic import BaseModel
 
 from fastapi import FastAPI, HTTPException, status, Depends, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_
 
+from mangum import Mangum
 from app.models import (
     ExtractRequest,
     ExtractResponse,
@@ -36,8 +38,14 @@ from app.models import (
     MultiAgentResult,
     MultiAgentResponse,
     AITool,
-    VideoMetadata
+    VideoMetadata,
+    Concept,
+    StudyMaterials,
+    PodcastRequest,
+    PodcastResponse,
+    PodcastEpisode
 )
+from app.api import history_router, presets_router
 from app.tools import YouTubeTranscriptExtractor, LectureSummarizer, ConceptExtractor, FlashcardGenerator, QuizGenerator, PodcastScriptGenerator, TTSService
 from app.agents import MultiAgentOrchestrator
 from app.database import get_db, dispose_engine
@@ -134,8 +142,6 @@ app.add_middleware(
 # ============================================================================
 # Include API Routers (Modular Architecture - Oct 2025 Best Practice)
 # ============================================================================
-from app.api import history_router, presets_router
-
 app.include_router(history_router)
 app.include_router(presets_router)
 
@@ -783,10 +789,6 @@ async def process_video_stream(
 # On-Demand Study Materials Generation (Phase 2)
 # ============================================================================
 
-from pydantic import BaseModel
-from typing import List
-from app.models import Concept, StudyMaterials
-
 
 class StudyMaterialsRequest(BaseModel):
     """Request model for on-demand study materials generation"""
@@ -859,8 +861,6 @@ async def generate_study_materials(request: StudyMaterialsRequest) -> StudyMater
 # ============================================================================
 # On-Demand Podcast Generation (Phase 4)
 # ============================================================================
-
-from app.models import PodcastRequest, PodcastResponse, PodcastEpisode
 
 
 @app.post("/api/podcast/generate", response_model=PodcastResponse)
@@ -939,8 +939,6 @@ async def generate_podcast(request: PodcastRequest) -> PodcastResponse:
 # ============================================================================
 # AWS Lambda Handler (Mangum ASGI Adapter)
 # ============================================================================
-from mangum import Mangum
-
 handler = Mangum(app, lifespan="off")
 
 
