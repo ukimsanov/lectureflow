@@ -112,27 +112,78 @@ class YouTubeTranscriptExtractor:
     def _get_transcript(self, video_id: str) -> Optional[List[Dict]]:
         """Get transcript using youtube-transcript-api v1.2.3"""
         try:
-            # Updated API for version 1.2.3
-            # Create instance and fetch transcript
             api = YouTubeTranscriptApi()
-            transcript_data = api.fetch(
-                video_id,
-                languages=['en', 'en-US']  # Try English, fallback to US English
-            )
 
-            # Return minimal structure: text + start time
-            # transcript_data contains FetchedTranscriptSnippet objects
-            return [
-                {"text": item.text, "start": item.start}
-                for item in transcript_data
-            ]
+            # Try to get list of available transcripts first
+            try:
+                transcript_list = api.list(video_id)
+                available_transcripts = list(transcript_list)
+                print(f"📝 Available transcripts: {[t.language_code for t in available_transcripts]}")
+            except Exception as e:
+                print(f"Could not list transcripts: {e}")
+                available_transcripts = []
+
+            # Priority order for languages
+            preferred_languages = ['en', 'en-US', 'en-GB', 'ru', 'es', 'fr', 'de', 'zh', 'ja', 'ko']
+
+            # Try preferred languages first
+            for lang in preferred_languages:
+                try:
+                    transcript_data = api.fetch(video_id, languages=[lang])
+                    print(f"✅ Found transcript in: {lang}")
+                    return [
+                        {"text": item.text, "start": item.start}
+                        for item in transcript_data
+                    ]
+                except Exception:
+                    continue
+
+            # If no preferred language found, try any available transcript
+            if available_transcripts:
+                for transcript in available_transcripts:
+                    try:
+                        transcript_data = api.fetch(video_id, languages=[transcript.language_code])
+                        print(f"✅ Found transcript in: {transcript.language_code}")
+                        return [
+                            {"text": item.text, "start": item.start}
+                            for item in transcript_data
+                        ]
+                    except Exception:
+                        continue
+
+            print(f"❌ No transcript available for video {video_id}")
+            return None
+
         except Exception as e:
             print(f"Transcript extraction failed: {e}")
             return None
 
     def _build_full_text(self, transcript_data: List[Dict]) -> str:
-        """Combine all transcript segments into full text"""
-        return " ".join(item['text'] for item in transcript_data)
+        """Combine all transcript segments into formatted text with paragraph breaks"""
+        if not transcript_data:
+            return ""
+
+        paragraphs = []
+        current_paragraph = []
+
+        for i, item in enumerate(transcript_data):
+            current_paragraph.append(item['text'])
+
+            # Add paragraph break if there's a pause > 2 seconds or after ~5 sentences
+            if i < len(transcript_data) - 1:
+                gap = transcript_data[i + 1]['start'] - item['start']
+                text_so_far = ' '.join(current_paragraph)
+                sentence_count = text_so_far.count('.') + text_so_far.count('?') + text_so_far.count('!')
+
+                if gap > 2.0 or sentence_count >= 5:
+                    paragraphs.append(' '.join(current_paragraph))
+                    current_paragraph = []
+
+        # Add remaining text
+        if current_paragraph:
+            paragraphs.append(' '.join(current_paragraph))
+
+        return '\n\n'.join(paragraphs)
 
     def _create_chunks(
         self,
