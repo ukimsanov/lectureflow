@@ -24,7 +24,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.local
+      dockerfile: Dockerfile
     container_name: lectureflow-api
     ports:
       - "8000:8000"

@@ -173,7 +173,7 @@ lectureflow/
     │   ├── tools/           # AI processing tools
     │   └── database/        # SQLAlchemy models
     ├── docker-compose.yml   # Docker orchestration
-    └── Dockerfile.local     # Container build
+    └── Dockerfile           # Container build
 ```
 
 ---

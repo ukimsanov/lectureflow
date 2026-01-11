@@ -1,21 +1,23 @@
-# LectureFlow API - AWS Lambda Container
-FROM public.ecr.aws/lambda/python:3.12
+FROM python:3.12-slim
 
-# Install FFmpeg from static binary
-RUN dnf install -y tar xz && \
-    curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | \
-    tar -xJ --strip-components=1 -C /usr/local/bin --wildcards '*/ffmpeg' '*/ffprobe' && \
-    dnf clean all
+# Install system dependencies (FFmpeg for podcast audio)
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
-COPY requirements.txt ${LAMBDA_TASK_ROOT}/
-RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+WORKDIR /app
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app/ ${LAMBDA_TASK_ROOT}/app/
+COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
 
-# Set correct permissions for Lambda
-RUN chmod -R 755 ${LAMBDA_TASK_ROOT}
+# Expose port
+EXPOSE 8000
 
-# Set the handler (Mangum wraps FastAPI)
-CMD ["app.main.handler"]
+# Start uvicorn server
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

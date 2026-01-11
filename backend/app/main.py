@@ -29,7 +29,6 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_
 
-from mangum import Mangum
 from app.models import (
     ExtractRequest,
     ExtractResponse,
@@ -934,12 +933,6 @@ async def generate_podcast(request: PodcastRequest) -> PodcastResponse:
             success=False,
             error=str(e)
         )
-
-
-# ============================================================================
-# AWS Lambda Handler (Mangum ASGI Adapter)
-# ============================================================================
-handler = Mangum(app, lifespan="off")
 
 
 # ============================================================================
