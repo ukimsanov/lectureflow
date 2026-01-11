@@ -12,7 +12,7 @@ Transform any YouTube lecture into comprehensive notes, flashcards, quizzes, and
 [![LangGraph](https://img.shields.io/badge/LangGraph-1.0-purple)](https://github.com/langchain-ai/langgraph)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Live Demo](https://lectureflow.ularkimsanov7.workers.dev) · [API Docs](https://4k6qhzh138.execute-api.us-east-1.amazonaws.com/docs)
+[Live Demo](https://lectureflow.ularkimsanov.com) · [API Docs](https://lectureflow-api.ularkimsanov.com/docs)
 
 </div>
 
@@ -47,8 +47,8 @@ Transform any YouTube lecture into comprehensive notes, flashcards, quizzes, and
 - **ElevenLabs** for podcast TTS
 
 ### Infrastructure
-- **PostgreSQL** (Neon) with SQLAlchemy 2.0
-- **AWS Lambda** for serverless backend API
+- **PostgreSQL** with SQLAlchemy 2.0 async
+- **Docker** + **Cloudflare Tunnel** for backend API
 - **Cloudflare Workers** for frontend hosting
 
 ---
@@ -134,17 +134,18 @@ Full API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## Deployment
 
-### AWS Lambda (Serverless)
+### Backend (Docker + Cloudflare Tunnel)
 
 ```bash
 cd backend
-sam build
-sam deploy --guided
+cp .env.example .env.docker  # Add your API keys + tunnel token
+docker compose --env-file .env.docker up -d
+docker compose exec api alembic upgrade head
 ```
 
-See [template.yaml](backend/template.yaml) for infrastructure configuration.
+See [docker-compose.yml](backend/docker-compose.yml) for infrastructure configuration.
 
-### Cloudflare Workers (Frontend)
+### Frontend (Cloudflare Workers)
 
 ```bash
 cd frontend
@@ -163,7 +164,7 @@ lectureflow/
 ├── frontend/                 # Next.js 15 application
 │   ├── src/app/             # App Router pages
 │   ├── src/components/      # React components
-│   └── src/types/           # TypeScript types
+│   └── wrangler.toml        # Cloudflare Workers config
 └── backend/                  # FastAPI application
     ├── app/
     │   ├── main.py          # FastAPI app & endpoints
@@ -171,8 +172,8 @@ lectureflow/
     │   ├── agents/          # LangGraph orchestration
     │   ├── tools/           # AI processing tools
     │   └── database/        # SQLAlchemy models
-    ├── template.yaml        # AWS SAM template
-    └── Dockerfile           # Container deployment
+    ├── docker-compose.yml   # Docker orchestration
+    └── Dockerfile.local     # Container build
 ```
 
 ---
@@ -183,7 +184,6 @@ lectureflow/
 |--------|-------|
 | Fresh processing | 15-30 seconds |
 | Cached processing | < 1 second |
-| Lambda cold start | ~700ms (SnapStart) |
 | Cost savings | 99% on repeat videos |
 
 ---
