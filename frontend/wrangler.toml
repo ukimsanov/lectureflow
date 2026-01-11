@@ -13,4 +13,4 @@ binding = "ASSETS"
 
 # Environment variables (public ones baked at build time)
 [vars]
-NEXT_PUBLIC_API_URL = "https://4k6qhzh138.execute-api.us-east-1.amazonaws.com"
+NEXT_PUBLIC_API_URL = "https://lectureflow-api.ularkimsanov.com"
